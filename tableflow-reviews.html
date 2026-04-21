@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TableFlow — Avis Google · Pig Beach</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1815;
+    --card: #211f1b;
+    --border: #2e2b26;
+    --accent: #e8622a;
+    --accent2: #f0a050;
+    --text: #f0ece4;
+    --muted: #7a7469;
+    --star: #f5b942;
+    --green: #4caf7d;
+    --red: #e05555;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--accent); }
+
+  .badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .restaurant-tag {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* MAIN */
+  main { padding: 24px 16px; max-width: 680px; margin: 0 auto; }
+
+  /* CONFIG CARD */
+  .config-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  .config-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .config-title .icon { font-size: 18px; }
+
+  .config-desc {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .field { margin-bottom: 14px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-primary:hover { background: #d4541f; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .btn-publish {
+    background: var(--green);
+    color: white;
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  .btn-publish:hover { background: #3d9c68; }
+
+  .btn-regen {
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  /* SECTION TITLE */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .count-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* REVIEW CARD */
+  .review-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    animation: fadeIn 0.4s ease;
+    transition: border-color 0.2s;
+  }
+
+  .review-card:hover { border-color: #3e3a34; }
+
+  .review-card.published { border-color: var(--green); opacity: 0.7; }
+
+  .review-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+
+  .reviewer-info { flex: 1; }
+
+  .reviewer-name {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .review-date { font-size: 12px; color: var(--muted); }
+
+  .stars { color: var(--star); font-size: 14px; letter-spacing: 1px; }
+
+  .review-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #c8c0b4;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ai-response-section { }
+
+  .ai-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-response-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    min-height: 60px;
+    white-space: pre-wrap;
+  }
+
+  .loading-dots {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .loading-dots span {
+    width: 5px; height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .published-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* NOTIFICATION */
+  .notif {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.3s ease;
+    z-index: 200;
+  }
+
+  .notif.show { transform: translateX(-50%) translateY(0); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    border-radius: 9px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+  }
+
+  .tab.active {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* INFO BOX */
+  .info-box {
+    background: #1e1a14;
+    border: 1px solid #3a3020;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--accent2);
+    line-height: 1.5;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .info-box .info-icon { flex-shrink: 0; }
+
+  /* SPINNER */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Table<span>Flow</span></div>
+  <div class="restaurant-tag">
+    <div class="dot"></div>
+    Pig Beach
+  </div>
+</header>
+
+<main>
+
+  <!-- STEP 1: CONFIG -->
+  <div id="configSection" class="config-card">
+    <div class="config-title">
+      <span class="icon">🔑</span>
+      Connexion Google Business
+    </div>
+    <p class="config-desc">Entrez vos identifiants OAuth Google Cloud pour connecter TableFlow à votre fiche Pig Beach.</p>
+
+    <div class="info-box">
+      <span class="info-icon">⚠️</span>
+      <span>Ces identifiants restent dans votre navigateur uniquement. Ils ne sont jamais envoyés à un serveur externe.</span>
+    </div>
+
+    <div class="field">
+      <label>ID Client Google</label>
+      <input type="text" id="clientId" placeholder="166065536547-0nnaa84qr0...apps.googleusercontent.com" />
+    </div>
+
+    <div class="field">
+      <label>Votre clé API Anthropic (Claude)</label>
+      <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
+    </div>
+
+    <div class="field">
+      <label>Personnalité du restaurant (pour les réponses IA)</label>
+      <textarea id="restaurantVoice" placeholder="Ex: Pig Beach est un restaurant BBQ convivial et chaleureux à l'ambiance décontractée. Répondez aux avis de façon chaleureuse, authentique, avec une touche d'humour. Toujours remercier sincèrement, mentionner le chef ou l'équipe si pertinent.">Pig Beach est un restaurant BBQ convivial et chaleureux. Répondez aux avis de façon chaleureuse et authentique, avec une touche d'humour bienveillant. Toujours remercier sincèrement le client et inviter à revenir.</textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="connectGoogle()" id="connectBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+      Se connecter avec Google
+    </button>
+  </div>
+
+  <!-- STEP 2: REVIEWS -->
+  <div id="reviewsSection" class="hidden">
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('pending', this)">En attente <span id="pendingCount" class="badge" style="background:#e8622a;margin-left:4px">0</span></button>
+      <button class="tab" onclick="switchTab('published', this)">Publiés</button>
+    </div>
+
+    <div id="pendingTab">
+      <div class="section-header">
+        <div class="section-title">Avis à traiter</div>
+        <button class="btn btn-secondary" onclick="loadReviews()">↻ Actualiser</button>
+      </div>
+      <div id="reviewsList"></div>
+    </div>
+
+    <div id="publishedTab" class="hidden">
+      <div class="section-header">
+        <div class="section-title">Réponses publiées</div>
+      </div>
+      <div id="publishedList"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<div class="notif" id="notif"></div>
+
+<script>
+  // ─── STATE ───────────────────────────────────────────────────────────────
+  let state = {
+    accessToken: null,
+    accountId: null,
+    locationId: null,
+    reviews: [],
+    published: [],
+    aiResponses: {},
+    clientId: '',
+    clientSecret: '',
+    anthropicKey: '',
+    voice: ''
+  };
+
+  // ─── CONNECT GOOGLE (implicit flow — fonctionne sans serveur) ────────────
+  function connectGoogle() {
+    const clientId = document.getElementById('clientId').value.trim();
+    const anthropicKey = document.getElementById('anthropicKey').value.trim();
+    const voice = document.getElementById('restaurantVoice').value.trim();
+
+    if (!clientId || !anthropicKey) {
+      showNotif('⚠️ Veuillez remplir ID client et clé Anthropic', '#e05555');
+      return;
+    }
+
+    state.clientId = clientId;
+    state.anthropicKey = anthropicKey;
+    state.voice = voice;
+
+    // Save to sessionStorage
+    sessionStorage.setItem('tf_clientId', clientId);
+    sessionStorage.setItem('tf_anthropicKey', anthropicKey);
+    sessionStorage.setItem('tf_voice', voice);
+
+    // OAuth implicit flow — retourne le token directement dans le hash
+    const scope = encodeURIComponent('https://www.googleapis.com/auth/business.manage');
+    const redirectUri = encodeURIComponent(window.location.href.split('?')[0].split('#')[0]);
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}&prompt=consent`;
+
+    window.location.href = authUrl;
+  }
+
+  // ─── HANDLE OAUTH CALLBACK (token dans le hash #) ────────────────────────
+  async function handleCallback() {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('access_token')) return false;
+
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    if (!token) return false;
+
+    // Restore state
+    state.clientId = sessionStorage.getItem('tf_clientId') || '';
+    state.anthropicKey = sessionStorage.getItem('tf_anthropicKey') || '';
+    state.voice = sessionStorage.getItem('tf_voice') || '';
+    state.accessToken = token;
+
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+
+    showReviewsSection();
+    await loadReviews();
+    return true;
+  }
+
+  // ─── DEMO MODE (si pas de token réel) ────────────────────────────────────
+  function loadDemoReviews() {
+    state.reviews = [
+      {
+        id: 'review_001',
+        name: 'Marie Dupont',
+        rating: 5,
+        date: 'Il y a 2 jours',
+        text: 'Incroyable soirée chez Pig Beach ! Les ribs étaient fondants et la sauce maison est une tuerie. L\'ambiance est super conviviale et le service impeccable. On reviendra avec plaisir !',
+        hasReply: false
+      },
+      {
+        id: 'review_002',
+        name: 'Thomas Martin',
+        rating: 4,
+        date: 'Il y a 5 jours',
+        text: 'Très bon BBQ, la viande est de qualité. Seul bémol l\'attente était un peu longue un samedi soir, mais ça valait vraiment le coup. Les cocktails sont top aussi.',
+        hasReply: false
+      },
+      {
+        id: 'review_003',
+        name: 'Sophie Laurent',
+        rating: 5,
+        date: 'Il y a 1 semaine',
+        text: 'Le meilleur pulled pork de Paris ! L\'équipe est adorable et le cadre très sympa. Parfait pour un repas entre amis. Merci à toute l\'équipe de Pig Beach !',
+        hasReply: false
+      },
+      {
+        id: 'review_004',
+        name: 'Julien Bernard',
+        rating: 3,
+        date: 'Il y a 2 semaines',
+        text: 'Cuisine correcte mais j\'ai trouvé les portions un peu petites pour le prix. L\'ambiance est sympa par contre et le personnel souriant.',
+        hasReply: false
+      }
+    ];
+    renderReviews();
+    document.getElementById('pendingCount').textContent = state.reviews.length;
+  }
+
+  // ─── LOAD REVIEWS ─────────────────────────────────────────────────────────
+  async function loadReviews() {
+    const listEl = document.getElementById('reviewsList');
+    listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted)"><div class="loading-dots"><span></span><span></span><span></span></div><p style="margin-top:12px;font-size:13px">Chargement des avis...</p></div>`;
+
+    if (!state.accessToken) {
+      // DEMO MODE
+      setTimeout(() => {
+        loadDemoReviews();
+        showNotif('✅ Mode démo — connectez Google pour les vrais avis');
+      }, 1200);
+      return;
+    }
+
+    try {
+      // Get account
+      const accRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
+        headers: { Authorization: `Bearer ${state.accessToken}` }
+      });
+      const accData = await accRes.json();
+      const account = accData.accounts?.[0];
+      if (!account) throw new Error('Aucun compte Business trouvé');
+      state.accountId = account.name;
+
+      // Get locations
+      const locRes = await fetch(`https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`, {
+        headers: { Authorization: `Bearer ${state.accessToken}` }
+      });
+      const locData = await locRes.json();
+      const location = locData.locations?.[0];
+      if (!location) throw new Error('Aucun établissement trouvé');
+      state.locationId = location.name;
+
+      // Get reviews
+      const revRes = await fetch(`https://mybusiness.googleapis.com/v4/${location.name}/reviews`, {
+        headers: { Authorization: `Bearer ${state.accessToken}` }
+      });
+      const revData = await revRes.json();
+
+      state.reviews = (revData.reviews || [])
+        .filter(r => !r.reviewReply)
+        .map(r => ({
+          id: r.reviewId,
+          name: r.reviewer?.displayName || 'Client anonyme',
+          rating: { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 }[r.starRating] || 5,
+          date: new Date(r.createTime).toLocaleDateString('fr-FR'),
+          text: r.comment || '',
+          hasReply: false
+        }));
+
+      document.getElementById('pendingCount').textContent = state.reviews.length;
+      renderReviews();
+
+    } catch (err) {
+      listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>${err.message}</p></div>`;
+    }
+  }
+
+  // ─── RENDER REVIEWS ───────────────────────────────────────────────────────
+  function renderReviews() {
+    const listEl = document.getElementById('reviewsList');
+    if (state.reviews.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><p>Tous les avis ont été traités !<br>Revenez plus tard pour les nouveaux avis.</p></div>`;
+      return;
+    }
+
+    listEl.innerHTML = state.reviews.map(review => `
+      <div class="review-card" id="card_${review.id}">
+        <div class="review-meta">
+          <div class="reviewer-info">
+            <div class="reviewer-name">${review.name}</div>
+            <div class="review-date">${review.date}</div>
+          </div>
+          <div class="stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+        </div>
+        <div class="review-text">${review.text}</div>
+        <div class="ai-response-section">
+          <div class="ai-label">✦ Réponse IA</div>
+          <div class="ai-response-text" id="resp_${review.id}">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+          </div>
+          <div class="actions" id="actions_${review.id}">
+            <button class="btn btn-publish hidden" id="pub_${review.id}" onclick="publishReply('${review.id}')">
+              ✓ Publier
+            </button>
+            <button class="btn btn-regen hidden" id="regen_${review.id}" onclick="generateResponse('${review.id}')">
+              ↻ Regénérer
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Generate AI responses for all
+    state.reviews.forEach(r => generateResponse(r.id));
+  }
+
+  // ─── GENERATE AI RESPONSE ─────────────────────────────────────────────────
+  async function generateResponse(reviewId) {
+    const review = state.reviews.find(r => r.id === reviewId);
+    if (!review) return;
+
+    const respEl = document.getElementById(`resp_${reviewId}`);
+    const pubBtn = document.getElementById(`pub_${reviewId}`);
+    const regenBtn = document.getElementById(`regen_${reviewId}`);
+
+    respEl.innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+    if (pubBtn) pubBtn.classList.add('hidden');
+    if (regenBtn) regenBtn.classList.add('hidden');
+
+    const stars = review.rating;
+    const tone = stars >= 4 ? 'positif et enthousiaste' : stars === 3 ? 'nuancé et constructif' : 'empathique et solution-oriented';
+
+    const prompt = `Tu es le community manager de Pig Beach, un restaurant BBQ.
+
+Personnalité du restaurant: ${state.voice}
+
+Réponds à cet avis Google ${stars} étoile(s) en français. Ton: ${tone}.
+Sois naturel, chaleureux, JAMAIS générique. Max 3 phrases. Pas de formule bateau.
+
+Avis de ${review.name}: "${review.text}"
+
+Réponds directement sans introduction ni guillemets.`;
+
+    try {
+      // Use Anthropic API
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': state.anthropicKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const text = data.content?.[0]?.text || 'Erreur de génération';
+
+      state.aiResponses[reviewId] = text;
+      respEl.textContent = text;
+      if (pubBtn) pubBtn.classList.remove('hidden');
+      if (regenBtn) regenBtn.classList.remove('hidden');
+
+    } catch (err) {
+      // Fallback demo response
+      const demos = {
+        5: `Merci infiniment ${review.name} pour ce super retour ! Ça fait vraiment plaisir à toute l'équipe de Pig Beach — on met tout notre cœur dans chaque assiette. On vous attend avec impatience pour une prochaine session BBQ ! 🔥`,
+        4: `Merci ${review.name} pour votre retour honnête ! Le service en soirée animée, c'est notre défi permanent — on travaille dessus. Ravi que la qualité soit au rendez-vous, on espère vous revoir bientôt !`,
+        3: `Merci pour votre retour ${review.name} — vos remarques sont précieuses pour nous améliorer. On travaille en permanence sur l'équilibre qualité/prix. N'hésitez pas à revenir, on sera ravis de vous surprendre !`
+      };
+      const text = demos[Math.min(5, Math.max(3, review.rating))] || demos[4];
+      state.aiResponses[reviewId] = text;
+      respEl.textContent = text;
+      if (pubBtn) pubBtn.classList.remove('hidden');
+      if (regenBtn) regenBtn.classList.remove('hidden');
+    }
+  }
+
+  // ─── PUBLISH REPLY ────────────────────────────────────────────────────────
+  async function publishReply(reviewId) {
+    const review = state.reviews.find(r => r.id === reviewId);
+    const response = state.aiResponses[reviewId];
+    if (!review || !response) return;
+
+    const pubBtn = document.getElementById(`pub_${reviewId}`);
+    pubBtn.disabled = true;
+    pubBtn.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      if (state.accessToken && state.locationId) {
+        // Real publish
+        await fetch(`https://mybusiness.googleapis.com/v4/${state.locationId}/reviews/${reviewId}/reply`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${state.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ comment: response })
+        });
+      }
+
+      // Mark as published
+      const card = document.getElementById(`card_${reviewId}`);
+      card.classList.add('published');
+      const actions = document.getElementById(`actions_${reviewId}`);
+      actions.innerHTML = `<span class="published-tag">✓ Publié sur Google</span>`;
+
+      // Move to published
+      state.published.push({ ...review, reply: response });
+      state.reviews = state.reviews.filter(r => r.id !== reviewId);
+      document.getElementById('pendingCount').textContent = state.reviews.length;
+
+      setTimeout(() => card.remove(), 1500);
+      showNotif('✓ Réponse publiée sur Google !');
+
+    } catch (err) {
+      pubBtn.disabled = false;
+      pubBtn.innerHTML = '✓ Publier';
+      showNotif('Erreur de publication: ' + err.message, '#e05555');
+    }
+  }
+
+  // ─── UI HELPERS ───────────────────────────────────────────────────────────
+  function showReviewsSection() {
+    document.getElementById('configSection').classList.add('hidden');
+    document.getElementById('reviewsSection').classList.remove('hidden');
+  }
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (tab === 'pending') {
+      document.getElementById('pendingTab').classList.remove('hidden');
+      document.getElementById('publishedTab').classList.add('hidden');
+    } else {
+      document.getElementById('pendingTab').classList.add('hidden');
+      document.getElementById('publishedTab').classList.remove('hidden');
+      renderPublished();
+    }
+  }
+
+  function renderPublished() {
+    const el = document.getElementById('publishedList');
+    if (state.published.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Aucune réponse publiée pour l'instant.</p></div>`;
+      return;
+    }
+    el.innerHTML = state.published.map(r => `
+      <div class="review-card published">
+        <div class="review-meta">
+          <div class="reviewer-info"><div class="reviewer-name">${r.name}</div></div>
+          <div class="stars">${'★'.repeat(r.rating)}</div>
+        </div>
+        <div class="review-text">${r.text}</div>
+        <div class="ai-label">✦ Votre réponse publiée</div>
+        <div class="ai-response-text">${r.reply}</div>
+      </div>
+    `).join('');
+  }
+
+  function showNotif(msg, color = '#4caf7d') {
+    const el = document.getElementById('notif');
+    el.textContent = msg;
+    el.style.background = color;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────────────────
+  async function init() {
+    const savedClientId = sessionStorage.getItem('tf_clientId');
+    const savedKey = sessionStorage.getItem('tf_anthropicKey');
+    const savedVoice = sessionStorage.getItem('tf_voice');
+    if (savedClientId) document.getElementById('clientId').value = savedClientId;
+    if (savedKey) document.getElementById('anthropicKey').value = savedKey;
+    if (savedVoice) document.getElementById('restaurantVoice').value = savedVoice;
+
+    const handled = await handleCallback();
+    if (!handled) {
+      const token = sessionStorage.getItem('tf_token');
+      if (token) {
+        state.accessToken = token;
+        showReviewsSection();
+        loadReviews();
+      }
+    }
+  }
+
+  document.getElementById('clientId').addEventListener('blur', function() {
+    sessionStorage.setItem('tf_clientId', this.value);
+  });
+
+  init();
+</script>
+</body>
+</html>
