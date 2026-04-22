@@ -486,12 +486,27 @@
     published: [],
     aiResponses: {},
     clientId: '',
-    clientSecret: '',
     anthropicKey: '',
     voice: ''
   };
 
-  // ─── CONNECT GOOGLE (implicit flow — fonctionne sans serveur) ────────────
+  // ─── HELPER: fetch avec retry sur 429 ────────────────────────────────────
+  async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const res = await fetch(url, options);
+      if (res.status === 429) {
+        // Attendre avant de réessayer : 2s, 4s, 8s
+        const waitMs = Math.pow(2, attempt + 1) * 1000;
+        console.log(`429 reçu — attente ${waitMs/1000}s avant retry ${attempt + 1}/${maxRetries}`);
+        await new Promise(r => setTimeout(r, waitMs));
+        continue;
+      }
+      return res;
+    }
+    throw new Error('Quota Google API dépassé (429). Attendez quelques minutes et réessayez.');
+  }
+
+  // ─── CONNECT GOOGLE (implicit flow) ──────────────────────────────────────
   function connectGoogle() {
     const clientId = document.getElementById('clientId').value.trim();
     const anthropicKey = document.getElementById('anthropicKey').value.trim();
@@ -506,12 +521,10 @@
     state.anthropicKey = anthropicKey;
     state.voice = voice;
 
-    // Save to sessionStorage
     sessionStorage.setItem('tf_clientId', clientId);
     sessionStorage.setItem('tf_anthropicKey', anthropicKey);
     sessionStorage.setItem('tf_voice', voice);
 
-    // OAuth implicit flow — retourne le token directement dans le hash
     const scope = encodeURIComponent('https://www.googleapis.com/auth/business.manage');
     const redirectUri = encodeURIComponent('https://pig-beach-bbq.github.io/tableflow/');
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}&prompt=consent`;
@@ -519,7 +532,7 @@
     window.location.href = authUrl;
   }
 
-  // ─── HANDLE OAUTH CALLBACK (token dans le hash #) ────────────────────────
+  // ─── HANDLE OAUTH CALLBACK ────────────────────────────────────────────────
   async function handleCallback() {
     const hash = window.location.hash;
     if (!hash || !hash.includes('access_token')) return false;
@@ -528,13 +541,14 @@
     const token = params.get('access_token');
     if (!token) return false;
 
-    // Restore state
     state.clientId = sessionStorage.getItem('tf_clientId') || '';
     state.anthropicKey = sessionStorage.getItem('tf_anthropicKey') || '';
     state.voice = sessionStorage.getItem('tf_voice') || '';
     state.accessToken = token;
 
-    // Clean URL
+    // Mettre en cache le token
+    sessionStorage.setItem('tf_token', token);
+
     window.history.replaceState({}, '', window.location.pathname);
 
     showReviewsSection();
@@ -542,7 +556,7 @@
     return true;
   }
 
-  // ─── DEMO MODE (si pas de token réel) ────────────────────────────────────
+  // ─── DEMO MODE ────────────────────────────────────────────────────────────
   function loadDemoReviews() {
     state.reviews = [
       {
@@ -588,7 +602,6 @@
     listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted)"><div class="loading-dots"><span></span><span></span><span></span></div><p style="margin-top:12px;font-size:13px">Chargement des avis...</p></div>`;
 
     if (!state.accessToken) {
-      // DEMO MODE
       setTimeout(() => {
         loadDemoReviews();
         showNotif('✅ Mode démo — connectez Google pour les vrais avis');
@@ -597,29 +610,54 @@
     }
 
     try {
-      // Get account
-      const accRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
-        headers: { Authorization: `Bearer ${state.accessToken}` }
-      });
-      const accData = await accRes.json();
-      const account = accData.accounts?.[0];
-      if (!account) throw new Error('Aucun compte Business trouvé');
-      state.accountId = account.name;
+      // Utiliser le cache si dispo pour éviter les 429
+      let accountName = state.accountId || sessionStorage.getItem('tf_accountId');
+      let locationName = state.locationId || sessionStorage.getItem('tf_locationId');
 
-      // Get locations
-      const locRes = await fetch(`https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`, {
-        headers: { Authorization: `Bearer ${state.accessToken}` }
-      });
-      const locData = await locRes.json();
-      const location = locData.locations?.[0];
-      if (!location) throw new Error('Aucun établissement trouvé');
-      state.locationId = location.name;
+      if (!accountName) {
+        const accRes = await fetchWithRetry(
+          'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+          { headers: { Authorization: `Bearer ${state.accessToken}` } }
+        );
+        const accData = await accRes.json();
+        console.log('Réponse accounts:', accData);
 
-      // Get reviews
-      const revRes = await fetch(`https://mybusiness.googleapis.com/v4/${location.name}/reviews`, {
-        headers: { Authorization: `Bearer ${state.accessToken}` }
-      });
+        const account = accData.accounts?.[0];
+        if (!account) {
+          throw new Error('Aucun compte Business trouvé. Vérifiez que votre compte Google a accès à Google Business Profile.');
+        }
+        accountName = account.name;
+        state.accountId = accountName;
+        sessionStorage.setItem('tf_accountId', accountName);
+      }
+
+      if (!locationName) {
+        // Petite pause pour éviter le rate limiting
+        await new Promise(r => setTimeout(r, 500));
+
+        const locRes = await fetchWithRetry(
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations?readMask=name,title`,
+          { headers: { Authorization: `Bearer ${state.accessToken}` } }
+        );
+        const locData = await locRes.json();
+        console.log('Réponse locations:', locData);
+
+        const location = locData.locations?.[0];
+        if (!location) throw new Error('Aucun établissement trouvé');
+        locationName = location.name;
+        state.locationId = locationName;
+        sessionStorage.setItem('tf_locationId', locationName);
+      }
+
+      // Pause avant d'appeler les avis
+      await new Promise(r => setTimeout(r, 500));
+
+      const revRes = await fetchWithRetry(
+        `https://mybusiness.googleapis.com/v4/${locationName}/reviews`,
+        { headers: { Authorization: `Bearer ${state.accessToken}` } }
+      );
       const revData = await revRes.json();
+      console.log('Réponse reviews:', revData);
 
       state.reviews = (revData.reviews || [])
         .filter(r => !r.reviewReply)
@@ -636,7 +674,14 @@
       renderReviews();
 
     } catch (err) {
-      listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>${err.message}</p></div>`;
+      console.error('Erreur loadReviews:', err);
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <p>${err.message}</p>
+          <br>
+          <button class="btn btn-secondary" onclick="loadReviews()" style="margin:0 auto">↻ Réessayer</button>
+        </div>`;
     }
   }
 
@@ -675,7 +720,6 @@
       </div>
     `).join('');
 
-    // Generate AI responses for all
     state.reviews.forEach(r => generateResponse(r.id));
   }
 
@@ -707,13 +751,13 @@ Avis de ${review.name}: "${review.text}"
 Réponds directement sans introduction ni guillemets.`;
 
     try {
-      // Use Anthropic API
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': state.anthropicKey,
-          'anthropic-version': '2023-06-01'
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
@@ -731,7 +775,6 @@ Réponds directement sans introduction ni guillemets.`;
       if (regenBtn) regenBtn.classList.remove('hidden');
 
     } catch (err) {
-      // Fallback demo response
       const demos = {
         5: `Merci infiniment ${review.name} pour ce super retour ! Ça fait vraiment plaisir à toute l'équipe de Pig Beach — on met tout notre cœur dans chaque assiette. On vous attend avec impatience pour une prochaine session BBQ ! 🔥`,
         4: `Merci ${review.name} pour votre retour honnête ! Le service en soirée animée, c'est notre défi permanent — on travaille dessus. Ravi que la qualité soit au rendez-vous, on espère vous revoir bientôt !`,
@@ -757,24 +800,24 @@ Réponds directement sans introduction ni guillemets.`;
 
     try {
       if (state.accessToken && state.locationId) {
-        // Real publish
-        await fetch(`https://mybusiness.googleapis.com/v4/${state.locationId}/reviews/${reviewId}/reply`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${state.accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ comment: response })
-        });
+        await fetchWithRetry(
+          `https://mybusiness.googleapis.com/v4/${state.locationId}/reviews/${reviewId}/reply`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${state.accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ comment: response })
+          }
+        );
       }
 
-      // Mark as published
       const card = document.getElementById(`card_${reviewId}`);
       card.classList.add('published');
       const actions = document.getElementById(`actions_${reviewId}`);
       actions.innerHTML = `<span class="published-tag">✓ Publié sur Google</span>`;
 
-      // Move to published
       state.published.push({ ...review, reply: response });
       state.reviews = state.reviews.filter(r => r.id !== reviewId);
       document.getElementById('pendingCount').textContent = state.reviews.length;
@@ -849,6 +892,9 @@ Réponds directement sans introduction ni guillemets.`;
       const token = sessionStorage.getItem('tf_token');
       if (token) {
         state.accessToken = token;
+        // Restaurer le cache account/location si dispo
+        state.accountId = sessionStorage.getItem('tf_accountId') || null;
+        state.locationId = sessionStorage.getItem('tf_locationId') || null;
         showReviewsSection();
         loadReviews();
       }
