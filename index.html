@@ -513,7 +513,7 @@
 
     // OAuth implicit flow — retourne le token directement dans le hash
     const scope = encodeURIComponent('https://www.googleapis.com/auth/business.manage');
-    const redirectUri = encodeURIComponent(window.location.href.split('?')[0].split('#')[0]);
+    const redirectUri = encodeURIComponent(https://pig-beach-bbq.github.io/tableflow/');
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}&prompt=consent`;
 
     window.location.href = authUrl;
